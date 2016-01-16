@@ -50,7 +50,7 @@
 
 #else
 
-#error "Unknown microcontroller:  Need to adapt EVTMGR_INTERRUPTS_ON(), EVTMGR_INTERRUPTS_OFF(), EVTMGR_INTERRUPTS_RESTORE() to this microcontroller."
+#error "Unknown microcontroller:  Need to adapt EVTMGR_INTERRUPTS_GET_STATE(), EVTMGR_INTERRUPTS_ON(), EVTMGR_INTERRUPTS_OFF() to this microcontroller."
 
 #endif
 
