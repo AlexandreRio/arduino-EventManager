@@ -35,13 +35,26 @@
 #include "EventManager.h"
 
 
+#if defined( __AVR_ARCH__ )
+
+#define EVTMGR_INTERRUPTS_GET_STATE()           (SREG & (1<<SREG_I))
+#define EVTMGR_INTERRUPTS_ON()                  sei()
+#define EVTMGR_INTERRUPTS_OFF()                 cli()
 
 
-static __inline__ void restoreInterruptState( const uint8_t *s )
-{
-    SREG = *s;
-    __asm__ volatile ("" ::: "memory");
-}
+#elif defined( SAM )
+
+#define EVTMGR_INTERRUPTS_GET_STATE()           (__get_PRIMASK() == 0)
+#define EVTMGR_INTERRUPTS_ON()                  __enable_irq()
+#define EVTMGR_INTERRUPTS_OFF()                 __disable_irq()
+
+#else
+
+#error "Unknown microcontroller:  Need to adapt EVTMGR_INTERRUPTS_ON(), EVTMGR_INTERRUPTS_OFF(), EVTMGR_INTERRUPTS_RESTORE() to this microcontroller."
+
+#endif
+
+
 
 
 
@@ -455,7 +468,7 @@ boolean EventManager::EventQueue::queueEvent( int eventCode, int eventParam )
     * blocked while an interrupt handler is executing.  This race condition can only happen
     * when an event is added to the queue by normal (non-interrupt) code and simultaneously
     * an interrupt handler tries to add an event to the queue.  This is the case that the
-    * cli() (= noInterrupts()) call protects against.
+    * EVTMGR_INTERRUPTS_OFF() call protects against.
     *
     * Contrast this with the logic in popEvent().
     *
@@ -474,13 +487,13 @@ boolean EventManager::EventQueue::queueEvent( int eventCode, int eventParam )
     }
 #endif
 
-    uint8_t sregSave;
+    bool interruptsOn;
     if ( mInterruptSafeMode )
     {
-        // Set up the atomic section by saving SREG and turning off interrupts
+        // Set up the atomic section by saving interrupt state and turning off interrupts
         // (because we might or might not be called inside an interrupt handler)
-        sregSave = SREG;
-        cli();
+        interruptsOn = EVTMGR_INTERRUPTS_GET_STATE();
+        EVTMGR_INTERRUPTS_OFF();
     }
 
     // ATOMIC BLOCK BEGIN (only atomic **if** mInterruptSafeMode is on)
@@ -501,10 +514,10 @@ boolean EventManager::EventQueue::queueEvent( int eventCode, int eventParam )
     }
     // ATOMIC BLOCK END
 
-    if ( mInterruptSafeMode )
+    if ( mInterruptSafeMode && interruptsOn )
     {
         // Restore previous state of interrupts
-        restoreInterruptState( &sregSave );
+        EVTMGR_INTERRUPTS_ON();
     }
 
 #if EVENTMANAGER_DEBUG
@@ -548,7 +561,7 @@ boolean EventManager::EventQueue::popEvent( int* eventCode, int* eventParam )
     if ( mInterruptSafeMode )
     {
         EVTMGR_DEBUG_PRINTLN( "popEvent() interrupts off" )
-        cli();
+        EVTMGR_INTERRUPTS_OFF();
     }
 
     // Pop the event from the head of the queue
@@ -569,7 +582,7 @@ boolean EventManager::EventQueue::popEvent( int* eventCode, int* eventParam )
     {
         // This function is NOT designed to called from interrupt handlers, so
         // it is safe to turn interrupts on instead of restoring a previous state.
-        sei();
+        EVTMGR_INTERRUPTS_ON();
         EVTMGR_DEBUG_PRINTLN( "popEvent() interrupts on" )
     }
 
