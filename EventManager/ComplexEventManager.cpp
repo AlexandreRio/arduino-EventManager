@@ -59,14 +59,62 @@ static __inline__ void restoreInterruptState( const uint8_t *s )
 #endif
 
 
-EventManager::EventManager( SafetyMode safety ) :
-mHighPriorityQueue( ( safety == EventManager::kInterruptSafe ) ),
-mLowPriorityQueue( ( safety == EventManager::kInterruptSafe ) )
+ComplexEventManager::ComplexEventManager( SafetyMode safety ) :
+mHighPriorityQueue( ( safety == ComplexEventManager::kInterruptSafe ) ),
+mLowPriorityQueue( ( safety == ComplexEventManager::kInterruptSafe ) )
 {
 }
 
+void ComplexEventManager::EventQueue::printEventInQueue()
+{
+  //int nb = mLowPriorityQueue.getNumEvents();
+  Serial.println("----------------------------");
+  //String s = "Test de print ";
+  //Serial.println(s + nb);
+  for ( int i = 0; i < kEventQueueSize; i++ )
+  {
+      int v = mEventQueue[i].param;
+      String s = "- ";
+      Serial.println(s + v);
+      //mEventQueue[i].code = ComplexEventManager::kEventNone;
+      //mEventQueue[i].param = 0;
+  }
+  Serial.println("----------------------------");
+}
 
-int EventManager::processEvent()
+long ComplexEventManager::EventQueue::avg()
+{
+  //probably not a good approach
+  long sum = 0;
+  unsigned short c0 = 0;
+  unsigned short c1 = 0;
+
+  for ( int i = 0; i < kEventQueueSize; i++ )
+  {
+      sum += mEventQueue[i].param;
+      if (mEventQueue[i].code == ComplexEventManager::kEventAnalog0)
+      	c0++;
+      else
+      	c1++;
+  }
+  //Serial.println(sum);
+  // might divide by zero, lel
+  long avg = sum/kEventQueueSize;
+  String s = "Avg of: ";
+  s.concat(avg);
+  s.concat(" on ");
+  s.concat(kEventQueueSize);
+  s.concat(" elements (");
+  s.concat(c0);
+  s.concat(" from S0 and ");
+  s.concat(c1);
+  s.concat(" from S1)");
+  Serial.println(s);
+  return avg;
+
+}
+
+int ComplexEventManager::processEvent()
 {
     int eventCode;
     int param;
@@ -102,7 +150,7 @@ int EventManager::processEvent()
 }
 
 
-int EventManager::processAllEvents()
+int ComplexEventManager::processAllEvents()
 {
     int eventCode;
     int param;
@@ -141,22 +189,22 @@ int EventManager::processAllEvents()
 
 
 
-EventManager::ListenerList::ListenerList() :
+ComplexEventManager::ListenerList::ListenerList() :
 mNumListeners( 0 ), mDefaultCallback( 0 )
 {
 }
 
-int EventManager::ListenerList::numListeners()
+int ComplexEventManager::ListenerList::numListeners()
 {
     return mNumListeners;
 };
 
-int EventManager::numListeners()
+int ComplexEventManager::numListeners()
 {
     return mListeners.numListeners();
 };
 
-boolean EventManager::ListenerList::addListener( int eventCode, EventListener listener )
+boolean ComplexEventManager::ListenerList::addListener( int eventCode, EventListener listener )
 {
     EVTMGR_DEBUG_PRINT( "addListener() enter " )
     EVTMGR_DEBUG_PRINT( eventCode )
@@ -187,7 +235,7 @@ boolean EventManager::ListenerList::addListener( int eventCode, EventListener li
 }
 
 
-boolean EventManager::ListenerList::removeListener( int eventCode, EventListener listener )
+boolean ComplexEventManager::ListenerList::removeListener( int eventCode, EventListener listener )
 {
     EVTMGR_DEBUG_PRINT( "removeListener() enter " )
     EVTMGR_DEBUG_PRINT( eventCode )
@@ -221,7 +269,7 @@ boolean EventManager::ListenerList::removeListener( int eventCode, EventListener
 }
 
 
-int EventManager::ListenerList::removeListener( EventListener listener )
+int ComplexEventManager::ListenerList::removeListener( EventListener listener )
 {
     EVTMGR_DEBUG_PRINT( "removeListener() enter " )
     EVTMGR_DEBUG_PRINTLN_PTR( listener )
@@ -253,7 +301,7 @@ int EventManager::ListenerList::removeListener( EventListener listener )
 }
 
 
-boolean EventManager::ListenerList::enableListener( int eventCode, EventListener listener, boolean enable )
+boolean ComplexEventManager::ListenerList::enableListener( int eventCode, EventListener listener, boolean enable )
 {
     EVTMGR_DEBUG_PRINT( "enableListener() enter " )
     EVTMGR_DEBUG_PRINT( eventCode )
@@ -282,7 +330,7 @@ boolean EventManager::ListenerList::enableListener( int eventCode, EventListener
 }
 
 
-boolean EventManager::ListenerList::isListenerEnabled( int eventCode, EventListener listener )
+boolean ComplexEventManager::ListenerList::isListenerEnabled( int eventCode, EventListener listener )
 {
     if ( mNumListeners == 0 )
     {
@@ -299,7 +347,7 @@ boolean EventManager::ListenerList::isListenerEnabled( int eventCode, EventListe
 }
 
 
-int EventManager::ListenerList::sendEvent( int eventCode, int param )
+int ComplexEventManager::ListenerList::sendEvent( int eventCode, int param )
 {
     EVTMGR_DEBUG_PRINT( "sendEvent() enter " )
     EVTMGR_DEBUG_PRINT( eventCode )
@@ -342,7 +390,7 @@ int EventManager::ListenerList::sendEvent( int eventCode, int param )
 }
 
 
-boolean EventManager::ListenerList::setDefaultListener( EventListener listener )
+boolean ComplexEventManager::ListenerList::setDefaultListener( EventListener listener )
 {
     EVTMGR_DEBUG_PRINT( "setDefaultListener() enter " )
     EVTMGR_DEBUG_PRINTLN_PTR( listener )
@@ -358,20 +406,20 @@ boolean EventManager::ListenerList::setDefaultListener( EventListener listener )
 }
 
 
-void EventManager::ListenerList::removeDefaultListener()
+void ComplexEventManager::ListenerList::removeDefaultListener()
 {
     mDefaultCallback = 0;
     mDefaultCallbackEnabled = false;
 }
 
 
-void EventManager::ListenerList::enableDefaultListener( boolean enable )
+void ComplexEventManager::ListenerList::enableDefaultListener( boolean enable )
 {
     mDefaultCallbackEnabled = enable;
 }
 
 
-int EventManager::ListenerList::searchListeners( int eventCode, EventListener listener )
+int ComplexEventManager::ListenerList::searchListeners( int eventCode, EventListener listener )
 {
 
     for ( int i = 0; i < mNumListeners; i++ )
@@ -388,7 +436,7 @@ int EventManager::ListenerList::searchListeners( int eventCode, EventListener li
 }
 
 
-int EventManager::ListenerList::searchListeners( EventListener listener )
+int ComplexEventManager::ListenerList::searchListeners( EventListener listener )
 {
     for ( int i = 0; i < mNumListeners; i++ )
     {
@@ -402,7 +450,7 @@ int EventManager::ListenerList::searchListeners( EventListener listener )
 }
 
 
-int EventManager::ListenerList::searchEventCode( int eventCode )
+int ComplexEventManager::ListenerList::searchEventCode( int eventCode )
 {
     for ( int i = 0; i < mNumListeners; i++ )
     {
@@ -422,7 +470,7 @@ int EventManager::ListenerList::searchEventCode( int eventCode )
 
 
 
-EventManager::EventQueue::EventQueue( boolean beSafe ) :
+ComplexEventManager::EventQueue::EventQueue( boolean beSafe ) :
 mEventQueueHead( 0 ),
 mEventQueueTail( 0 ),
 mNumEvents( 0 ),
@@ -430,14 +478,14 @@ mInterruptSafeMode( beSafe )
 {
     for ( int i = 0; i < kEventQueueSize; i++ )
     {
-        mEventQueue[i].code = EventManager::kEventNone;
+        mEventQueue[i].code = ComplexEventManager::kEventNone;
         mEventQueue[i].param = 0;
     }
 }
 
 
 
-boolean EventManager::EventQueue::queueEvent( int eventCode, int eventParam )
+boolean ComplexEventManager::EventQueue::queueEvent( int eventCode, int eventParam )
 {
     /*
     * The call to noInterrupts() MUST come BEFORE the full queue check.
@@ -519,7 +567,7 @@ boolean EventManager::EventQueue::queueEvent( int eventCode, int eventParam )
 }
 
 
-boolean EventManager::EventQueue::popEvent( int* eventCode, int* eventParam )
+boolean ComplexEventManager::EventQueue::popEvent( int* eventCode, int* eventParam )
 {
     /*
     * The call to noInterrupts() MUST come AFTER the empty queue check.
@@ -557,7 +605,7 @@ boolean EventManager::EventQueue::popEvent( int* eventCode, int* eventParam )
     *eventParam = mEventQueue[ mEventQueueHead ].param;
 
     // Clear the event (paranoia)
-    mEventQueue[ mEventQueueHead ].code = EventManager::kEventNone;
+    mEventQueue[ mEventQueueHead ].code = ComplexEventManager::kEventNone;
 
     // Update the queue head value
     mEventQueueHead = ( mEventQueueHead + 1 ) % kEventQueueSize;

@@ -50,7 +50,7 @@
 #endif
 
 
-class EventManager
+class ComplexEventManager
 {
 
 public:
@@ -141,7 +141,7 @@ public:
 
     // Create an event manager
     // By default, it operates in interrupt safe mode, allowing you to queue events from interrupt handlers
-    EventManager( SafetyMode safety = kInterruptSafe );
+    ComplexEventManager( SafetyMode safety = kInterruptSafe );
 
     // Add a listener
     // Returns true if the listener is successfully installed, false otherwise (e.g. the dispatch table is full)
@@ -186,6 +186,7 @@ public:
     // Actual number of events in queue
     int getNumEventsInQueue( EventPriority pri = kLowPriority );
 
+
     // tries to insert an event into the queue;
     // returns true if successful, false if the
     // queue if full and the event cannot be inserted
@@ -199,6 +200,8 @@ public:
     // this function might never return.  YOU HAVE BEEN WARNED.
     int processAllEvents();
 
+    void printEventInQueue();
+    long avg();
 
 private:
 
@@ -216,6 +219,9 @@ private:
 
         // Returns true if no more events can be inserted into the queue
         boolean isFull();
+
+        void printEventInQueue();
+        long avg();
 
         // Actual number of events in queue
         int getNumEvents();
@@ -345,74 +351,84 @@ private:
     ListenerList		mListeners;
 };
 
-//*********  INLINES   EventManager::  ***********
+//*********  INLINES   ComplexEventManager::  ***********
 
-inline boolean EventManager::addListener( int eventCode, EventListener listener )
+inline boolean ComplexEventManager::addListener( int eventCode, EventListener listener )
 {
     return mListeners.addListener( eventCode, listener );
 }
 
-inline boolean EventManager::removeListener( int eventCode, EventListener listener )
+inline boolean ComplexEventManager::removeListener( int eventCode, EventListener listener )
 {
     return mListeners.removeListener( eventCode, listener );
 }
 
-inline int EventManager::removeListener( EventListener listener )
+inline int ComplexEventManager::removeListener( EventListener listener )
 {
     return mListeners.removeListener( listener );
 }
 
-inline boolean EventManager::enableListener( int eventCode, EventListener listener, boolean enable )
+inline boolean ComplexEventManager::enableListener( int eventCode, EventListener listener, boolean enable )
 {
     return mListeners.enableListener( eventCode, listener, enable );
 }
 
-inline boolean EventManager::isListenerEnabled( int eventCode, EventListener listener )
+inline boolean ComplexEventManager::isListenerEnabled( int eventCode, EventListener listener )
 {
     return mListeners.isListenerEnabled( eventCode, listener );
 }
 
-inline boolean EventManager::setDefaultListener( EventListener listener )
+inline boolean ComplexEventManager::setDefaultListener( EventListener listener )
 {
     return mListeners.setDefaultListener( listener );
 }
 
-inline void EventManager::removeDefaultListener()
+inline void ComplexEventManager::removeDefaultListener()
 {
     mListeners.removeDefaultListener();
 }
 
-inline void EventManager::enableDefaultListener( boolean enable )
+inline void ComplexEventManager::enableDefaultListener( boolean enable )
 {
     mListeners.enableDefaultListener( enable );
 }
 
-inline boolean EventManager::isListenerListEmpty()
+inline boolean ComplexEventManager::isListenerListEmpty()
 {
     return mListeners.isEmpty();
 }
 
-inline boolean EventManager::isListenerListFull()
+inline boolean ComplexEventManager::isListenerListFull()
 {
     return mListeners.isFull();
 }
 
-inline boolean EventManager::isEventQueueEmpty( EventPriority pri )
+inline boolean ComplexEventManager::isEventQueueEmpty( EventPriority pri )
 {
     return ( pri == kHighPriority ) ? mHighPriorityQueue.isEmpty() : mLowPriorityQueue.isEmpty();
 }
 
-inline boolean EventManager::isEventQueueFull( EventPriority pri )
+inline boolean ComplexEventManager::isEventQueueFull( EventPriority pri )
 {
     return ( pri == kHighPriority ) ? mHighPriorityQueue.isFull() : mLowPriorityQueue.isFull();
 }
 
-inline int EventManager::getNumEventsInQueue( EventPriority pri )
+inline int ComplexEventManager::getNumEventsInQueue( EventPriority pri )
 {
     return ( pri == kHighPriority ) ? mHighPriorityQueue.getNumEvents() : mLowPriorityQueue.getNumEvents();
 }
 
-inline boolean EventManager::queueEvent( int eventCode, int eventParam, EventPriority pri )
+inline void ComplexEventManager::printEventInQueue()
+{
+  mLowPriorityQueue.printEventInQueue();
+}
+
+inline long ComplexEventManager::avg()
+{
+  return mLowPriorityQueue.avg();
+}
+
+inline boolean ComplexEventManager::queueEvent( int eventCode, int eventParam, EventPriority pri )
 {
     return ( pri == kHighPriority ) ?
         mHighPriorityQueue.queueEvent( eventCode, eventParam ) : mLowPriorityQueue.queueEvent( eventCode, eventParam );
@@ -421,40 +437,40 @@ inline boolean EventManager::queueEvent( int eventCode, int eventParam, EventPri
 
 
 
-//*********  INLINES   EventManager::EventQueue::  ***********
+//*********  INLINES   ComplexEventManager::EventQueue::  ***********
 
-inline boolean EventManager::EventQueue::isEmpty()
+inline boolean ComplexEventManager::EventQueue::isEmpty()
 {
     return ( mNumEvents == 0 );
 }
 
 
-inline boolean EventManager::EventQueue::isFull()
+inline boolean ComplexEventManager::EventQueue::isFull()
 {
     return ( mNumEvents == kEventQueueSize );
 }
 
 
-inline int EventManager::EventQueue::getNumEvents()
+inline int ComplexEventManager::EventQueue::getNumEvents()
 {
     return mNumEvents;
 }
 
 
 
-//*********  INLINES   EventManager::ListenerList::  ***********
+//*********  INLINES   ComplexEventManager::ListenerList::  ***********
 
-inline boolean EventManager::ListenerList::isEmpty()
+inline boolean ComplexEventManager::ListenerList::isEmpty()
 {
     return (mNumListeners == 0);
 }
 
-inline boolean EventManager::ListenerList::isFull()
+inline boolean ComplexEventManager::ListenerList::isFull()
 {
     return (mNumListeners == kMaxListeners);
 }
 
-inline int EventManager::ListenerList::getNumEntries()
+inline int ComplexEventManager::ListenerList::getNumEntries()
 {
     return mNumListeners;
 }
